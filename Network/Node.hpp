@@ -21,31 +21,96 @@ private:
         Node *s_node = nullptr;
         float s_weight = 0.0f;
     };
-
+    struct LastMutation {
+        float s_weight = 0;
+        int s_index = -1; // -1 = Undefined; -2 = Bias Mutation
+        int s_bias = 0;
+    } m_last_mutation;
     int m_connections;
     std::vector<Connection> *m_previous_nodes;
     int m_bias;
     uint8_t m_activation;
+
 public:
+    /**
+     * Constructs the shell of a node
+     */
     Node();
 
     ~Node();
 
-    void connect(Node &, float);
+    /**
+     * Connects this node with the node supplied
+     * @param node Reference to the node: Node &
+     * @param weight A weight associated with the connection: float
+     */
+    void connect(Node &node, float weight);
 
-    void set_bias(int);
+    /**
+     * Gets the number of connections
+     * @return The number of connections: unsigned int
+     */
+    [[nodiscard]] unsigned int get_connections() const;
 
+    /**
+     * Sets the bias of the node: int
+     * @param bias The new bias value: int
+     */
+    void set_bias(int bias);
+
+    /**
+     * Returns the bias of the node
+     * @return Bias of the node: int
+     */
     [[nodiscard]] int get_bias() const;
 
-    void set_weight(int, float);
+    /**
+     * Sets the weight of a single connection
+     * @param node The index of the node: int
+     * @param weight The new weight: float
+     */
+    void set_weight(int node, float weight);
 
-    [[nodiscard]] float get_weight(int);
 
-    void set_activation(uint8_t);
+    /**
+     * Returns the wight of given node
+     * @param node The index of the node: int
+     * @return The weight of the node: float
+     */
+    [[nodiscard]] float get_weight(int node) const;
 
-    [[nodiscard("Requires large amounts of calculation")]] uint8_t get_activation();
 
-    [[nodiscard]] static int sigmoid(int);
+    /**
+     * Sets the activation of the node
+     * @param activation The activation value: uint8_t
+     * @warning Only use with input nodes
+     */
+    void set_activation(uint8_t activation);
+
+
+    /**
+     * Calculates the activation of a single node
+     * @return The activation of the node: int
+     */
+    uint8_t get_activation();
+
+    /**
+     * Randomizes all connection and the bias, thus mutating the node
+     */
+    void mutate();
+
+    /**
+     * Rolls the node back to the state before the last mutation
+     */
+    void rollback();
+
+    /**
+     * A helper function to keep the activation in a 0 to 100 range
+     * @param t
+     * @return A value in range 0 to 100: int
+     */
+    static int sigmoid(int node);
+
 };
 
 

@@ -10,24 +10,61 @@
 
 class Layer {
 private:
-    std::vector<Node> *m_nodes;
+    std::vector<Node *> *m_nodes;
 
 public:
-    explicit Layer(int);
+    /**
+     * Constructs a layer of nodes
+     * @param nodes The amount of nodes inside the layer
+     */
+    explicit Layer(int nodes);
 
     ~Layer();
 
-    void connect(const Layer &);
+    /**
+     * Connects the layer with a previous Layer
+     * @param previous_layer The layer to connect to
+     */
+    void connect(const Layer &previous_layer);
 
-    void connect_layer_to_node(Node &);
+    /**
+     * Connects the layer to a single node
+     * @param node The node to connect to: Node &
+     * @warning Only used to connect to input nodes
+     */
+    void connect_layer_to_node(Node &node);
 
-    void connect_node_to_layer(Node &);
+    /**
+     * Connects a node to the layer
+     * @param node The node the layer gets connected to: Node &
+     * @warning Only used to connect a output node to the layer
+     */
+    void connect_node_to_layer(Node &node);
 
-    Node &get_node(int);
+    /**
+     * Gets the reference of a node
+     * @param node The index of the node: int
+     * @return A reference to the node: Node &
+     */
+    Node &get_node(int node);
 
-    unsigned int get_size();
+    /**
+     * Gets the number of nodes in the layer
+     * @return The number of nodes
+     */
+    [[nodiscard]] unsigned int get_size() const;
 
-    void scramble();
+    /**
+     * Mutates a specific node
+     * @param node The node to mutate
+     */
+    void mutate(int node);
+
+    /**
+     * Rolls the given Node back to the state of the last mutation
+     * @param node The nude to rollback
+     */
+    void rollback(int node);
 };
 
 
