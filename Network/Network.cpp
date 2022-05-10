@@ -15,7 +15,6 @@ Network::Network(int hidden_layers, int nodes_per_layer, int input_nodes, int ou
     m_layer->emplace_back(new Layer{output_nodes});
     // Connection
     connect();
-
 }
 
 Network::Network(int hidden_layers, int *nodes_per_layer, int input_nodes, int output_nodes) :
@@ -56,9 +55,29 @@ int *Network::get_input_layer() const {
 }
 
 int *Network::get_output_layer() const {
-    int *layer = new int[m_input_nodes];
-    for (int i = 0; i < m_input_nodes; ++i) {
+    int *layer = new int[m_output_nodes];
+    for (int i = 0; i < m_output_nodes; ++i) {
         layer[i] = m_layer->at(m_layer->size() - 1)->get_node(i).get_activation();
     }
     return layer;
+}
+
+void Network::train(bool (*fitness_function)(int *)) {
+
+}
+
+void Network::train(int tolerance, int *dataset) {
+    int difference = 100;
+    int difference_old = 100;
+    while (difference > tolerance) {
+
+
+
+        difference = abs(difference - get_output_layer()[0]);
+    }
+    for (int layer = 1; layer < m_layer->size(); ++layer) {
+        for (int node = 0; node < m_layer->at(layer)->get_size(); ++node) {
+            m_layer->at(layer)->mutate(node);
+        }
+    }
 }

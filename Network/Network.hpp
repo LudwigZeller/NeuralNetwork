@@ -8,6 +8,7 @@
 #include "Layer.hpp"
 #include <string>
 #include <array>
+#include <thread>
 
 class Network {
 private:
@@ -16,9 +17,21 @@ private:
     int m_output_nodes;
     std::vector<Layer *> *m_layer;
 
-    void connect();
 
+    void connect();
 public:
+    /**
+     * A struct used to train a dataset
+     */
+    template<int inputs, int outputs, int entries>
+    struct Dataset {
+        struct Data {
+            std::array<int, inputs> input;
+            std::array<int, outputs> output;
+        };
+        std::array<Data, entries> data;
+    };
+
     /**
      * Generates a network from ground up
      * @param hidden_layers The number of hidden Layers
@@ -56,13 +69,14 @@ public:
     /**
      * Calculates the output of the network
      * @return The array of output values
+     * @warning Expects the user to free the memory
      */
-    int *get_output_layer() const;
+    [[nodiscard]] int *get_output_layer() const;
 
 
-    void train(int value);
-    //TODO: Add Fitness-function Pointer
-    //void train(int);
+    void train(bool (*fitness_function)(int *));
+
+    void train(int difference, int *dataset);
     //TODO: Add save to json/csv
     //void safe_to_cvs(std::string path);
     //void safe_to_json(std::string path);

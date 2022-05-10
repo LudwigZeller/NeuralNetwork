@@ -23,7 +23,7 @@ Layer::~Layer() {
 void Layer::connect(const Layer &previous_layer) {
     for (auto &previous_node: *previous_layer.m_nodes) {
         for (auto &m_node: *m_nodes) {
-            m_node->connect(*previous_node, 1.0f);
+            m_node->connect(*previous_node, 1.0f/(float)previous_layer.get_size());
         }
     }
 }
