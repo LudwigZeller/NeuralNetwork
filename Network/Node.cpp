@@ -71,8 +71,10 @@ void Node::mutate() {
     // Backup
     m_last_mutation.s_index = rand() % m_connections;
     m_last_mutation.s_weight = m_previous_nodes->at(m_last_mutation.s_index).s_weight;
-    float new_weight = (float) (rand() % 100) / 100.0f;
-    set_weight(m_last_mutation.s_index, (rand() % 2 ? -new_weight : new_weight));
+    float new_weight = ((float) (rand() % 100) / 100.0f) * (float)(rand() % 2 ? -1 : 1);
+    float weight = get_weight(m_last_mutation.s_index);
+//    std::cout << weight << " \n";
+    set_weight(m_last_mutation.s_index, weight + new_weight);
 }
 
 
@@ -87,5 +89,5 @@ void Node::rollback() {
 
 
 int Node::sigmoid(int t) {
-    return (int8_t) (100.0f / (1 + (float) pow(M_E, -(float) t / 100.0f)));
+    return (int8_t) (100.0f / (1 + (float) pow(2.7182818283, -(float) t / 100.0f)));
 }

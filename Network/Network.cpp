@@ -32,6 +32,7 @@ Network::Network(int hidden_layers, int *nodes_per_layer, int input_nodes, int o
 
 Network::~Network() {
     delete m_layer;
+    delete m_async_status_thread;
 }
 
 void Network::connect() {
@@ -40,44 +41,118 @@ void Network::connect() {
     }
 }
 
+void Network::async_status() {
+    std::cout << "Started separate status thread" << std::endl;
+    std::string input;
+    while (!m_training_data.s_finished) {
+        std::getline(std::cin, input);
+        if (input == "exit" || input == "e") {
+            std::cout << "Exited through user input" << std::endl;
+            exit(1);
+        } else if (input == "status" || input == "s") {
+            std::cout << "-----------------------------------"
+                      << "\nNetwork:\t\t" << m_layer->at(0)->get_size();
+            for (int i = 1; i < m_layers; ++i)
+                std::cout << "-" << m_layer->at(i)->get_size();
+            std::cout << "\nMutations:\t\t" << m_training_data.s_mutations
+                      << "\nGain-Mutations\t\t" << m_training_data.s_gains
+                      << "\nNo-Change-Mutations:\t" << m_training_data.s_wasted
+                      << "\nUNDOs:\t\t\t" << m_training_data.s_undo
+                      << "\nFitness:\t\t" << ((float) ((int) ((100 - m_training_data.s_avg) * 100)) / 100.0f) << "%"
+                      << "\nAverage Difference: \t" << m_training_data.s_avg
+                      << "\n-----------------------------------" << std::endl;
+        } else {
+            if (!input.empty())
+                std::cout << "Unknown instruction: " << input << std::endl;
+        }
+    }
+}
+
+float Network::get_difference(const std::vector<std::vector<int>> &dataset) {
+    auto active_set = new int[m_input_nodes];
+    std::vector<int> output{};
+    int sum = 0;
+    for (auto &data: dataset) {
+        for (int i = 0; i < m_input_nodes; ++i) {
+            active_set[i] = data.at(i);
+        }
+        set_input_layer(active_set);
+        output = get_output_layer();
+        for (int i = 0; i < output.size(); ++i) {
+            sum += abs(output.at(i) - data.at(m_input_nodes + i));
+        }
+    }
+    return (float) sum / (float) (m_output_nodes * dataset.size());
+}
+
+void Network::activate_async_status() {
+    if (m_async_status_thread != nullptr) return;
+    m_async_status_thread = new std::thread(&Network::async_status, this);
+}
+
 void Network::set_input_layer(int *values) {
     for (int i = 0; i < m_input_nodes; ++i) {
         m_layer->at(0)->get_node(i).set_activation(values[i]);
     }
 }
 
-int *Network::get_input_layer() const {
-    int *layer = new int[m_input_nodes];
+std::vector<int> Network::get_input_layer() const {
+    std::vector<int> layer;
     for (int i = 0; i < m_input_nodes; ++i) {
-        layer[i] = m_layer->at(0)->get_node(i).get_activation();
+        layer.emplace_back(m_layer->at(0)->get_node(i).get_activation());
     }
     return layer;
 }
 
-int *Network::get_output_layer() const {
-    int *layer = new int[m_output_nodes];
+std::vector<int> Network::get_output_layer() const {
+    std::vector<int> layer;
     for (int i = 0; i < m_output_nodes; ++i) {
-        layer[i] = m_layer->at(m_layer->size() - 1)->get_node(i).get_activation();
+        layer.emplace_back(m_layer->at(m_layer->size() - 1)->get_node(i).get_activation());
     }
     return layer;
 }
 
 void Network::train(bool (*fitness_function)(int *)) {
-
+    // Work in progress
 }
 
-void Network::train(int tolerance, int *dataset) {
-    int difference = 100;
-    int difference_old = 100;
+void Network::train(float tolerance, const std::vector<std::vector<int>> &dataset, int mutations_per_cycle) {
+    m_training_data.s_finished = false;
+    float difference = 100.0f;
+    float difference_old = 100.0f;
+    std::vector<std::vector<int>> mutations;
+    int mutation_layer;
+    int mutation_node;
     while (difference > tolerance) {
-
-
-
-        difference = abs(difference - get_output_layer()[0]);
-    }
-    for (int layer = 1; layer < m_layer->size(); ++layer) {
-        for (int node = 0; node < m_layer->at(layer)->get_size(); ++node) {
-            m_layer->at(layer)->mutate(node);
+        for (int i = 0; i < mutations_per_cycle; ++i) {
+            mutation_layer = 1 + (int) rand() % (m_layers - 1); // So the input layer doesn't mutate
+            mutation_node = rand() % m_layer->at(mutation_layer)->get_size();
+            m_layer->at(mutation_layer)->mutate(mutation_node);
+            mutations.emplace_back(std::vector<int>{mutation_layer, mutation_node});
         }
+
+
+        difference = get_difference(dataset);
+        if (difference_old == difference)
+            m_training_data.s_wasted++;
+        else if (difference_old < difference) {
+            for (auto &item: mutations) {
+                m_layer->at(item[0])->mutate(item[1]);
+            }
+            m_training_data.s_undo++;
+            difference_old = get_difference(dataset);
+        } else {
+            difference_old = difference;
+            m_training_data.s_avg = difference;
+            m_training_data.s_gains++;
+        }
+        m_training_data.s_mutations++;
+    }
+
+    m_training_data.s_finished = true;
+    if (m_async_status_thread != nullptr) {
+        std::cout << "Finished Training - Please press enter to stop the status thread and continue the program"
+                  << std::endl;
+        m_async_status_thread->join();
     }
 }

@@ -8,6 +8,7 @@
 #include <vector>
 #include <cstdint>
 #include <cmath>
+#include <iostream>
 
 /**
  * A Class to represent a singe Node in a network

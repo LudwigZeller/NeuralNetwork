@@ -10,6 +10,7 @@
 
 class Layer {
 private:
+    std::vector<Node * > m_di;
     std::vector<Node *> *m_nodes;
 
 public:
