@@ -46,6 +46,7 @@ void Network::async_status() {
     std::string input;
     while (!m_training_data.s_finished) {
         std::getline(std::cin, input);
+        std::chrono::duration<float> duration = std::chrono::system_clock::now() - m_training_data.s_start;
         if (input == "exit" || input == "e") {
             std::cout << "Exited through user input" << std::endl;
             exit(1);
@@ -55,11 +56,12 @@ void Network::async_status() {
             for (int i = 1; i < m_layers; ++i)
                 std::cout << "-" << m_layer->at(i)->get_size();
             std::cout << "\nMutations:\t\t" << m_training_data.s_mutations
-                      << "\nGain-Mutations\t\t" << m_training_data.s_gains
+                      << "\nGain-Mutations:\t\t" << m_training_data.s_gains
                       << "\nNo-Change-Mutations:\t" << m_training_data.s_wasted
                       << "\nUNDOs:\t\t\t" << m_training_data.s_undo
                       << "\nFitness:\t\t" << ((float) ((int) ((100 - m_training_data.s_avg) * 100)) / 100.0f) << "%"
                       << "\nAverage Difference: \t" << m_training_data.s_avg
+                      << "\nTraining Time:\t\t" << (float) (int) (duration.count() * 100) / 100.0f << "s"
                       << "\n-----------------------------------" << std::endl;
         } else {
             if (!input.empty())
@@ -116,13 +118,15 @@ void Network::train(bool (*fitness_function)(int *)) {
     // Work in progress
 }
 
-void Network::train(float tolerance, const std::vector<std::vector<int>> &dataset, int mutations_per_cycle) {
+void Network::train(float tolerance, const std::vector<std::vector<int>> &dataset) {
     m_training_data.s_finished = false;
+    int mutations_per_cycle = 10;
     float difference = 100.0f;
     float difference_old = 100.0f;
     std::vector<std::vector<int>> mutations;
     int mutation_layer;
     int mutation_node;
+    m_training_data.s_start = std::chrono::system_clock::now();
     while (difference > tolerance) {
         for (int i = 0; i < mutations_per_cycle; ++i) {
             mutation_layer = 1 + (int) rand() % (m_layers - 1); // So the input layer doesn't mutate
@@ -137,21 +141,26 @@ void Network::train(float tolerance, const std::vector<std::vector<int>> &datase
             m_training_data.s_wasted++;
         else if (difference_old < difference) {
             for (auto &item: mutations) {
-                m_layer->at(item[0])->mutate(item[1]);
+                m_layer->at(item[0])->rollback(item[1]);
             }
             m_training_data.s_undo++;
-            difference_old = get_difference(dataset);
         } else {
+            if (difference <= 1.0f) mutations_per_cycle = 1;
+            else if (difference <= 5.0f) mutations_per_cycle = 3;
+            else if (difference <= 15.0f) mutations_per_cycle = 6;
+
             difference_old = difference;
             m_training_data.s_avg = difference;
             m_training_data.s_gains++;
         }
         m_training_data.s_mutations++;
     }
-
+    auto stop = std::chrono::system_clock::now();
+    std::chrono::duration<float> duration = stop - m_training_data.s_start;
     m_training_data.s_finished = true;
+    std::cout << "Finished Training in " << (float) (int) (duration.count() * 100) / 100.0f << "s" << std::endl;
     if (m_async_status_thread != nullptr) {
-        std::cout << "Finished Training - Please press enter to stop the status thread and continue the program"
+        std::cout << "Please press enter to stop the status thread and continue the program"
                   << std::endl;
         m_async_status_thread->join();
     }

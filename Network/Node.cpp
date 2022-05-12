@@ -65,16 +65,14 @@ void Node::mutate() {
     if (!(rand() % (m_connections + 1))) {
         m_last_mutation.s_bias = m_bias;
         m_last_mutation.s_index = -2;
-        set_bias(rand() % 100 - 50);
+        set_bias(m_bias + (rand() % 50 - 25));
         return;
     }
     // Backup
     m_last_mutation.s_index = rand() % m_connections;
     m_last_mutation.s_weight = m_previous_nodes->at(m_last_mutation.s_index).s_weight;
-    float new_weight = ((float) (rand() % 100) / 100.0f) * (float)(rand() % 2 ? -1 : 1);
-    float weight = get_weight(m_last_mutation.s_index);
-//    std::cout << weight << " \n";
-    set_weight(m_last_mutation.s_index, weight + new_weight);
+    float new_weight = ((float) (rand() % 100) / 100.0f) * (float) (rand() % 2 ? -1 : 1);
+    set_weight(m_last_mutation.s_index, m_last_mutation.s_weight + new_weight);
 }
 
 

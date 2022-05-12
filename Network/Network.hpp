@@ -6,7 +6,7 @@
 #define NODENETWORK_NETWORK_HPP
 
 #include "Layer.hpp"
-#include "chrono"
+#include <chrono>
 #include <string>
 #include <array>
 #include <thread>
@@ -28,6 +28,7 @@ private:
         int s_gains = 0;
         float s_avg = 100.0f;
         bool s_finished = false;
+        std::chrono::time_point<std::chrono::system_clock> s_start = std::chrono::system_clock::now();
     } m_training_data;
 
     void connect();
@@ -81,7 +82,7 @@ public:
 
     void train(bool (*fitness_function)(int *));
 
-    void train(float difference, const std::vector<std::vector<int>> &dataset, int mutations_per_cycle = 1);
+    void train(float difference, const std::vector<std::vector<int>> &dataset);
     // TODO: Add save to json/csv
     // void safe_to_cvs(std::string path);
     // void safe_to_json(std::string path);
